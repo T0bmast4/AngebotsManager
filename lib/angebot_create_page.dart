@@ -22,6 +22,9 @@ class AngebotCreatePage extends StatefulWidget{
 
 class _AngebotCreatePage extends State<AngebotCreatePage> {
   final _formKey = GlobalKey<FormState>();
+  List<Leistung> items = [];
+  List<Leistung> filteredItems = [];
+  String _query = '';
   Set<Leistung> selectedLeistungen = Set<Leistung>();
 
   TextEditingController nameController = TextEditingController();
@@ -31,6 +34,17 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
   TextEditingController cityController = TextEditingController();
   TextEditingController projectController = TextEditingController();
 
+  void search(String query) {
+    _query = query;
+    if (_query.isEmpty) {
+      filteredItems = items;
+    } else {
+      filteredItems = items.where((item) => item.name.toLowerCase().contains(query.toLowerCase())).toList();
+    }
+    setState(() {
+
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AngebotCreateProvider>(
@@ -106,6 +120,17 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                           ),
                           Padding(padding: EdgeInsets.only(top: 20)),
 
+                          const Text("Leistungen", textScaler: TextScaler.linear(2)),
+                          Padding(padding: EdgeInsets.only(top: 20)),
+                          SearchBar(
+                            hintText: "Suchen...",
+                            onChanged: (value) {
+                              search(value);
+                            },
+                            leading: IconButton(icon: const Icon(Icons.search), onPressed: () {}),
+                            trailing: [IconButton(icon: const Icon(Icons.mic), onPressed: () {})],
+                          ),
+                          Padding(padding: EdgeInsets.only(top: 10)),
                           StreamBuilder<List<Leistung>>(
                             stream: provider.leistungen,
                             builder: (context, snapshot) {
@@ -113,32 +138,42 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                                 return CircularProgressIndicator();
                               }
 
-                              final leistungen = snapshot.data!;
-                              return Container(
+                              items = snapshot.data!;
+
+                              final displayItems = _query.isNotEmpty ? filteredItems : items;
+                              return displayItems.isEmpty
+                                  ? Container (
+                                      height: 500,
+                                      child: const Center(
+                                        child: Text("Keine Ergebnisse gefunden!", style: TextStyle(fontSize: 18)),
+                                      )
+                                    )
+                                  : Container(
                                 height: 500,
                                 child: ListView.builder(
-                                  itemCount: leistungen.length,
+                                  itemCount: displayItems.length,
                                   itemBuilder: (context, index) {
-                                    final leistung = leistungen[index];
+
+                                    final leistung = displayItems[index];
+
                                     return CheckboxListTile(
+                                      controlAffinity: ListTileControlAffinity.leading,
                                       title: Text(leistung.name),
                                       subtitle: Text(leistung.description),
-                                      value: selectedLeistungen.contains(leistung),  // Verwendet das Set
+                                      value: selectedLeistungen.contains(leistung),
                                       onChanged: (bool? value) {
                                         setState(() {
                                           if (value == true) {
-                                            selectedLeistungen.add(leistung);  // Hinzufügen zur Auswahl
+                                            selectedLeistungen.add(leistung);
                                           } else {
-                                            selectedLeistungen.remove(leistung);  // Entfernen aus der Auswahl
+                                            selectedLeistungen.remove(leistung);
                                           }
                                         });
-                                        print(selectedLeistungen);
                                       },
                                     );
                                   },
                                 ),
                               );
-
                             },
                           ),
                           FilledButton(onPressed: () {

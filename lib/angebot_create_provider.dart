@@ -6,6 +6,7 @@ class AngebotCreateProvider extends ChangeNotifier {
     return Stream.value(
       [
         Leistung(name: "Baustellengemeinkosten", description: "Sämtliche ...", amount: 1.00, unit: "PA", singlePrice: 0.00, totalPrice: 0.00),
+        Leistung(name: "Entfernung des Fliesenbelags", description: "Sämtliche ...", amount: 1.00, unit: "PA", singlePrice: 0.00, totalPrice: 0.00),
         Leistung(name: "Entfernung der Altbeschichtung", description: "Die zu beschichtenden ...", amount: 1.00, unit: "PA", singlePrice: 300.00, totalPrice: 300.00),
       ]
     );

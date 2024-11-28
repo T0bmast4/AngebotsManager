@@ -4,6 +4,7 @@ import 'dart:ui';
 import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:xml/xml.dart';
@@ -45,21 +46,28 @@ class Angebot {
         print('Found document.xml!');
 
         String documentXmlContent = String.fromCharCodes(documentXmlFile.content);
+        var now = DateTime.now();
+        var formatter = DateFormat('dd.MM.yyyy');
+        String formattedDate = formatter.format(now);
+
         if(zH != null) {
           documentXmlContent = documentXmlContent
               .replaceAll('~Â³Â§n', name)
               .replaceAll('~Â³Â§a', address)
               .replaceAll('~Â³Â§p', "A- $plz $city")
               .replaceAll('~Â³Â§z', zH!)
-              .replaceAll("f32-sd3", project);
+              .replaceAll("f32-sd3", project)
+              .replaceAll("d42s", formattedDate);
         }else{
           documentXmlContent = documentXmlContent
               .replaceAll('~Â³Â§n', "")
               .replaceAll('~Â³Â§a', address)
               .replaceAll('~Â³Â§p', "A- $plz $city")
               .replaceAll('~Â³Â§z', name)
-              .replaceAll("f32-sd3", project);
+              .replaceAll("f32-sd3", project)
+              .replaceAll("d42s", formattedDate);
         }
+        print(documentXmlContent);
 
         final updatedDocument = XmlDocument.parse(documentXmlContent);
 
