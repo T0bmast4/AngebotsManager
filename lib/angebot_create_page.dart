@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:angebote_manager/angebot.dart';
 import 'package:angebote_manager/angebot_create_provider.dart';
+import 'package:angebote_manager/angebotsleistung.dart';
 import 'package:angebote_manager/leistung.dart';
 import 'package:archive/archive.dart';
 import 'package:docx_template/docx_template.dart';
@@ -15,7 +16,6 @@ import 'package:provider/provider.dart';
 import 'package:xml/xml.dart';
 
 class AngebotCreatePage extends StatefulWidget{
-
   @override
   _AngebotCreatePage createState() => _AngebotCreatePage();
 }
@@ -25,7 +25,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
   List<Leistung> items = [];
   List<Leistung> filteredItems = [];
   String _query = '';
-  Set<Leistung> selectedLeistungen = Set<Leistung>();
+  Set<AngebotsLeistung> selectedLeistungen = Set<AngebotsLeistung>();
 
   TextEditingController nameController = TextEditingController();
   TextEditingController zHController = TextEditingController();
@@ -162,13 +162,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                                       subtitle: Text(leistung.description),
                                       value: selectedLeistungen.contains(leistung),
                                       onChanged: (bool? value) {
-                                        setState(() {
-                                          if (value == true) {
-                                            selectedLeistungen.add(leistung);
-                                          } else {
-                                            selectedLeistungen.remove(leistung);
-                                          }
-                                        });
+                                        _showLeistungsForm(context, leistung);
                                       },
                                     );
                                   },
@@ -211,6 +205,93 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
           },
         ),
       ),
+    );
+  }
+
+  void _showLeistungsForm(BuildContext context, Leistung leistung) async {
+    final _formKey2 = GlobalKey<FormState>();
+
+    TextEditingController amountController = TextEditingController();
+    TextEditingController singlePriceController = TextEditingController();
+
+    showModalBottomSheet(
+      isDismissible: false,
+      context: context,
+      elevation: 10,
+      builder: ((context) {
+        return Padding(
+          padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: Form(
+              key: _formKey2,
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 24.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Padding(padding: EdgeInsets.only(top: 20)),
+
+                    TextFormField(
+                        controller: singlePriceController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Einzelpreis',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Bitte gib einen Einzelpreis ein.";
+                          }
+
+                          final parsedValue = double.tryParse(value.replaceAll(',', '.'));
+                          if (parsedValue == null) {
+                            return "Bitte gib eine gültige Zahl ein.";
+                          }
+
+                          return null;
+                        }
+                    ),
+
+                    Padding(padding: EdgeInsets.only(top: 20)),
+
+                    TextFormField(
+                        controller: amountController,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Anzahl',
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return "Bitte gib eine Anzahl ein.";
+                          }
+
+                          final parsedValue = double.tryParse(value.replaceAll(',', '.'));
+                          if (parsedValue == null) {
+                            return "Bitte gib eine gültige Zahl ein.";
+                          }
+
+                          return null;
+                        }
+                    ),
+
+                    Padding(padding: EdgeInsets.only(top: 50)),
+
+                    FilledButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          Navigator.pop(context);
+                          AngebotsLeistung(leistung: leistung, singlePrice: singlePriceController.text, amount: amountController.text);
+                        }
+                      },
+                      child: Text('Speichern'),
+                    ),
+                    Padding(padding: EdgeInsets.only(bottom: 20)),
+                  ],
+                ),
+              )
+          ),
+        );
+      }),
     );
   }
 }
