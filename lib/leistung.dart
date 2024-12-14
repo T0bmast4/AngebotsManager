@@ -1,29 +1,25 @@
+import 'package:angebote_manager/unterleistung.dart';
+
 class Leistung {
   final String name;
   final String description;
-  final double amount;
-  final String unit;
-  final double singlePrice;
-  final double totalPrice;
+  final List<Unterleistung>? unterleistungen;
+  final List<String> units;
 
   Leistung({
     required this.name,
     required this.description,
-    required this.amount,
-    required this.unit,
-    required this.singlePrice,
-    required this.totalPrice,
+    this.unterleistungen,
+    required this.units,
   });
 
   @override
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is Leistung &&
-        other.name == name &&
-        other.amount == amount &&
-        other.unit == unit;
+        other.name == name;
   }
 
   @override
-  int get hashCode => Object.hash(name, amount, unit);
+  int get hashCode => Object.hash(name, description);
 }

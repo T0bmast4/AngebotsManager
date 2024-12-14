@@ -2,14 +2,33 @@ import 'package:angebote_manager/leistung.dart';
 
 class AngebotsLeistung {
   final Leistung leistung;
-  final String amount;
-  final String singlePrice;
+  final double amount;
+  final double singlePrice;
+  final String unit;
 
   AngebotsLeistung({
     required this.leistung,
     required this.amount,
     required this.singlePrice,
+    required this.unit,
   });
 
-  double get totalPrice => double.parse(amount) * double.parse(singlePrice);
+  String get totalPrice {
+    String totalPrice = (amount * singlePrice).toStringAsFixed(2);
+    totalPrice = totalPrice.toString().replaceAll(".", ",");
+    return totalPrice;
+  }
+
+  String get amountString {
+    return amount.toStringAsFixed(2).replaceAll(".", ",");
+  }
+  
+  String get singlePriceString {
+    return singlePrice.toStringAsFixed(2).replaceAll(".", ",");
+  }
+  
+  double get totalPriceAsDouble {
+    double totalPrice = amount * singlePrice;
+    return totalPrice;
+  }
 }

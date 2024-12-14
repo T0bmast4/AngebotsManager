@@ -6,6 +6,7 @@ import 'package:angebote_manager/angebot_create_provider.dart';
 import 'package:angebote_manager/angebotsleistung.dart';
 import 'package:angebote_manager/leistung.dart';
 import 'package:archive/archive.dart';
+import 'package:blinking_text/blinking_text.dart';
 import 'package:docx_template/docx_template.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -20,12 +21,15 @@ class AngebotCreatePage extends StatefulWidget{
   _AngebotCreatePage createState() => _AngebotCreatePage();
 }
 
-class _AngebotCreatePage extends State<AngebotCreatePage> {
+class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProviderStateMixin{
   final _formKey = GlobalKey<FormState>();
   List<Leistung> items = [];
   List<Leistung> filteredItems = [];
   String _query = '';
-  Set<AngebotsLeistung> selectedLeistungen = Set<AngebotsLeistung>();
+  List<AngebotsLeistung> selectedLeistungen = [];
+
+  String? errorMessage;
+  String? feedbackMessage;
 
   TextEditingController nameController = TextEditingController();
   TextEditingController zHController = TextEditingController();
@@ -34,6 +38,10 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
   TextEditingController cityController = TextEditingController();
   TextEditingController projectController = TextEditingController();
 
+  final anschriften = ["Damen und Herren", "Frau", "Herr"];
+
+  var selectedAnschrift = "Damen und Herren";
+
   void search(String query) {
     _query = query;
     if (_query.isEmpty) {
@@ -41,10 +49,27 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
     } else {
       filteredItems = items.where((item) => item.name.toLowerCase().contains(query.toLowerCase())).toList();
     }
-    setState(() {
-
-    });
+    setState(() {});
   }
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
+  void _showError(String message) {
+    setState(() {
+      errorMessage = message;
+    });
+
+    print(message);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider<AngebotCreateProvider>(
@@ -61,6 +86,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                       key: _formKey,
                       child: Column(
                         children: [
+                          // Formularfelder
                           TextFormField(
                               controller: nameController,
                               decoration: const InputDecoration(
@@ -70,6 +96,23 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                               validator: (value) => value?.isNotEmpty == true ? null : "Bitte gib einen Namen ein."
                           ),
                           Padding(padding: EdgeInsets.only(top: 20)),
+
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: DropdownMenu<String>(
+                              initialSelection: anschriften.first,
+                              onSelected: (String? value) {
+                                setState(() {
+                                  selectedAnschrift = value!;
+                                });
+                              },
+                              dropdownMenuEntries: anschriften.map<DropdownMenuEntry<String>>((String value) {
+                                return DropdownMenuEntry<String>(value: value, label: value);
+                              }).toList(),
+                            ),
+                          ),
+                          Padding(padding: EdgeInsets.only(top: 20)),
+
                           TextFormField(
                               controller: zHController,
                               decoration: const InputDecoration(
@@ -81,6 +124,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                               }
                           ),
                           Padding(padding: EdgeInsets.only(top: 20)),
+
                           TextFormField(
                               controller: addressController,
                               decoration: const InputDecoration(
@@ -88,15 +132,6 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
                                 labelText: 'Adresse',
                               ),
                               validator: (value) => value?.isNotEmpty == true ? null : "Bitte gib eine Adresse ein."
-                          ),
-                          Padding(padding: EdgeInsets.only(top: 20)),
-                          TextFormField(
-                              controller: plzController,
-                              decoration: const InputDecoration(
-                                border: OutlineInputBorder(),
-                                labelText: 'PLZ',
-                              ),
-                              validator: (value) => value?.isNotEmpty == true ? null : "Bitte gib eine PLZ ein."
                           ),
                           Padding(padding: EdgeInsets.only(top: 20)),
 
@@ -142,60 +177,111 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
 
                               final displayItems = _query.isNotEmpty ? filteredItems : items;
                               return displayItems.isEmpty
-                                  ? Container (
-                                      height: 500,
-                                      child: const Center(
-                                        child: Text("Keine Ergebnisse gefunden!", style: TextStyle(fontSize: 18)),
-                                      )
-                                    )
+                                  ? Container(
+                                height: 500,
+                                child: const Center(
+                                  child: Text("Keine Ergebnisse gefunden!", style: TextStyle(fontSize: 18)),
+                                ),
+                              )
                                   : Container(
                                 height: 500,
-                                child: ListView.builder(
+                                child: GridView.builder(
+                                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                    crossAxisCount: MediaQuery.of(context).size.width ~/ 300,
+                                    crossAxisSpacing: 16.0,
+                                    mainAxisSpacing: 16.0,
+                                    childAspectRatio: 4,
+                                  ),
                                   itemCount: displayItems.length,
                                   itemBuilder: (context, index) {
-
                                     final leistung = displayItems[index];
 
-                                    return CheckboxListTile(
-                                      controlAffinity: ListTileControlAffinity.leading,
-                                      title: Text(leistung.name),
-                                      subtitle: Text(leistung.description),
-                                      value: selectedLeistungen.contains(leistung),
-                                      onChanged: (bool? value) {
-                                        _showLeistungsForm(context, leistung);
-                                      },
+                                    return Container(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: CheckboxListTile(
+                                        controlAffinity: ListTileControlAffinity.leading,
+                                        title: Text(
+                                          leistung.name,
+                                          style: TextStyle(fontSize: 16),
+                                        ),
+                                        value: selectedLeistungen.any((angebotsLeistung) => angebotsLeistung.leistung == leistung),
+                                        onChanged: (bool? value) async {
+                                          if (!selectedLeistungen.any((angebotsLeistung) => angebotsLeistung.leistung == leistung)) {
+                                            _showLeistungsForm(context, leistung);
+                                          } else {
+                                            setState(() {
+                                              selectedLeistungen.removeWhere((angebotsLeistung) => angebotsLeistung.leistung == leistung);
+                                            });
+                                          }
+                                        },
+                                      ),
                                     );
                                   },
                                 ),
                               );
                             },
                           ),
-                          FilledButton(onPressed: () {
+                          if (feedbackMessage != null)
+                            Text(
+                              feedbackMessage!,
+                              style: const TextStyle(
+                                color: Colors.redAccent,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          if (errorMessage != null)
+                                Column(
+                                  children: [
+                                    BlinkText(
+                                      "Alarm! Umgehend Software-Entwickler informieren",
+                                      style: TextStyle(fontSize: 24.0, color: Colors.red[900], fontWeight: FontWeight.bold),
+                                      beginColor: Colors.redAccent,
+                                      endColor: Colors.red[900],
+                                      duration: Duration(seconds: 1),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                    BlinkText(
+                                        errorMessage!,
+                                        style: TextStyle(fontSize: 18.0, color: Colors.red[900]),
+                                        beginColor: Colors.grey[100],
+                                        endColor: Colors.red[900],
+                                        duration: Duration(seconds: 1),
+                                        textAlign: TextAlign.center,
+                                    ),
+                                  ],
+                                ),
+                          Padding(padding: EdgeInsets.only(top: 10)),
+                          FilledButton(onPressed: () async {
                             if (_formKey.currentState!.validate()) {
-                              if(zHController.text.isNotEmpty) {
-                                Angebot(
-                                    name: nameController.text,
-                                    zH: zHController.text,
-                                    address: addressController.text,
-                                    plz: plzController.text,
-                                    city: cityController.text,
-                                    leistungen: selectedLeistungen,
-                                    project: projectController.text
+                              setState(() {
+                                feedbackMessage = null;
+                              });
+                              try {
+                                await Angebot(
+                                  name: nameController.text,
+                                  zH: zHController.text.isNotEmpty ? zHController.text : null,
+                                  address: addressController.text,
+                                  city: cityController.text,
+                                  leistungen: selectedLeistungen.reversed.toList(),
+                                  project: projectController.text,
+                                  anschrift: selectedAnschrift,
                                 ).createDocument();
-                              }else{
-                                Angebot(
-                                    name: nameController.text,
-                                    zH: null,
-                                    address: addressController.text,
-                                    plz: plzController.text,
-                                    city: cityController.text,
-                                    leistungen: selectedLeistungen,
-                                    project: projectController.text
-                                ).createDocument();
-                              }
 
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text("Dokument erfolgreich erstellt!")),
+                                );
+                                setState(() {
+                                  errorMessage = null;
+                                });
+                              } catch (e, stack) {
+                                _showError("Ein unbekannter Fehler ist aufgetreten: $e, $stack");
+                              }
+                            }else{
+                              setState(() {
+                                feedbackMessage = "Das Formular ist nicht valide!";
+                              });
                             }
-                          }, child: Text("Erstellen")),
+                          }, child: const Text("Erstellen")),
                         ],
                       ),
                     ),
@@ -208,90 +294,118 @@ class _AngebotCreatePage extends State<AngebotCreatePage> {
     );
   }
 
-  void _showLeistungsForm(BuildContext context, Leistung leistung) async {
+  Future<void> _showLeistungsForm(BuildContext context, Leistung leistung) async {
     final _formKey2 = GlobalKey<FormState>();
-
-    TextEditingController amountController = TextEditingController();
     TextEditingController singlePriceController = TextEditingController();
+    TextEditingController amountController = TextEditingController();
 
-    showModalBottomSheet(
-      isDismissible: false,
+    String selectedUnit = leistung.units.first;
+
+    await showModalBottomSheet(
       context: context,
       elevation: 10,
-      builder: ((context) {
+      builder: (context) {
         return Padding(
           padding:
           EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
           child: Form(
-              key: _formKey2,
-              child: Container(
-                padding: EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Padding(padding: EdgeInsets.only(top: 20)),
+            key: _formKey2,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Padding(padding: EdgeInsets.only(top: 20)),
 
-                    TextFormField(
-                        controller: singlePriceController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Einzelpreis',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Bitte gib einen Einzelpreis ein.";
-                          }
+                  TextFormField(
+                  controller: amountController,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'Anzahl',
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return "Bitte gib eine Anzahl ein.";
+                    }
 
-                          final parsedValue = double.tryParse(value.replaceAll(',', '.'));
-                          if (parsedValue == null) {
-                            return "Bitte gib eine gültige Zahl ein.";
-                          }
+                    value = value.replaceAll(',', '.');
+                    final parsedValue = double.tryParse(value);
+                    if (parsedValue == null) {
+                      return "Bitte gib eine gültige Zahl ein.";
+                    }
 
-                          return null;
-                        }
-                    ),
-
-                    Padding(padding: EdgeInsets.only(top: 20)),
-
-                    TextFormField(
-                        controller: amountController,
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          labelText: 'Anzahl',
-                        ),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Bitte gib eine Anzahl ein.";
-                          }
-
-                          final parsedValue = double.tryParse(value.replaceAll(',', '.'));
-                          if (parsedValue == null) {
-                            return "Bitte gib eine gültige Zahl ein.";
-                          }
-
-                          return null;
-                        }
-                    ),
-
-                    Padding(padding: EdgeInsets.only(top: 50)),
-
-                    FilledButton(
-                      onPressed: () async {
-                        if (_formKey.currentState!.validate()) {
-                          Navigator.pop(context);
-                          AngebotsLeistung(leistung: leistung, singlePrice: singlePriceController.text, amount: amountController.text);
-                        }
-                      },
-                      child: Text('Speichern'),
-                    ),
-                    Padding(padding: EdgeInsets.only(bottom: 20)),
-                  ],
+                    return null;
+                  },
                 ),
-              )
+
+                  Padding(padding: EdgeInsets.only(top: 20)),
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: DropdownMenu<String>(
+                      initialSelection: leistung.units.first,
+                      onSelected: (String? value) {
+                        setState(() {
+                          selectedUnit = value!;
+                        });
+                      },
+                      dropdownMenuEntries: leistung.units.map<DropdownMenuEntry<String>>((String value) {
+                        return DropdownMenuEntry<String>(value: value, label: value);
+                      }).toList(),
+                    ),
+                  ),
+
+                  Padding(padding: EdgeInsets.only(top: 20)),
+
+                  TextFormField(
+                    controller: singlePriceController,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(),
+                      labelText: 'Einzelpreis',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return "Bitte gib einen Einzelpreis ein.";
+                      }
+                      value = value.replaceAll(',', '.');
+                      final parsedValue = double.tryParse(value);
+                      if (parsedValue == null) {
+                        return "Bitte gib eine gültige Zahl ein.";
+                      }
+
+                      return null;
+                    },
+                  ),
+
+                  Padding(padding: EdgeInsets.only(top: 50)),
+
+                  FilledButton(
+                    onPressed: () {
+                      if (_formKey2.currentState!.validate()) {
+                        setState(() {
+                          selectedLeistungen.add(
+                            AngebotsLeistung(
+                              leistung: leistung,
+                              singlePrice: double.parse(singlePriceController.text.replaceAll(",", ".")),
+                              amount: double.parse(amountController.text.replaceAll(",", ".")),
+                              unit: selectedUnit,
+                            ),
+                          );
+                        });
+
+                        Navigator.pop(context);
+                      }
+                    },
+                    child: Text('Speichern'),
+                  ),
+                  Padding(padding: EdgeInsets.only(bottom: 20)),
+                ],
+              ),
+            ),
           ),
         );
-      }),
+      },
     );
   }
 }

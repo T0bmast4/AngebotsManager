@@ -12,7 +12,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Epox Angebote',
+      title: 'EPOX Angebote',
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme(
@@ -67,7 +67,7 @@ class HomePageState extends State<HomePage> {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.grey[800],
-          title: Text(style: TextStyle(color: Colors.white), "Epox"),
+          title: Text(style: TextStyle(color: Colors.white), "EPOX"),
           elevation: 20,
           centerTitle: true,
         ),
