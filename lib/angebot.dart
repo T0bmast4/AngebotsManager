@@ -54,47 +54,47 @@ class Angebot {
       
       if(zH != null) {
         documentXmlContent = documentXmlContent
-            .replaceAll('~Â³Â§n', encodeForWord(name))
-            .replaceAll('~Â³Â§a', encodeForWord(address))
-            .replaceAll('~Â³Â§p', "A- ${encodeForWord(city)}")
-            .replaceAll('~Â³Â§z', encodeForWord(zH!))
-            .replaceAll("f32-sd3", encodeForWord(project))
-            .replaceAll("d42s", formattedDate);
+            .replaceAll('#name#', encodeForWord(name))
+            .replaceAll('#address#', encodeForWord(address))
+            .replaceAll('#city#', "A- ${encodeForWord(city)}")
+            .replaceAll('#zH#', encodeForWord(zH!))
+            .replaceAll("#project#", encodeForWord(project))
+            .replaceAll("#date#", formattedDate);
 
         List<String> nameParts = zH!.split(" ");
         if(anschrift == "Damen und Herren") {
-          documentXmlContent = documentXmlContent.replaceAll("ans\$replace", "Sehr geehrte Damen und Herren");
+          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Damen und Herren");
         } else if(anschrift == "Frau") {
-          documentXmlContent = documentXmlContent.replaceAll("ans\$replace", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
+          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
         } else if(anschrift == "Herr") {
-          documentXmlContent = documentXmlContent.replaceAll("ans\$replace", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
+          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
         }
       }else{
         documentXmlContent = documentXmlContent
-            .replaceAll('~Â³Â§n', "")
-            .replaceAll('~Â³Â§a', encodeForWord(address))
-            .replaceAll('~Â³Â§p', "A- ${encodeForWord(city)}")
-            .replaceAll('~Â³Â§z', encodeForWord(name))
-            .replaceAll("f32-sd3", encodeForWord(project))
-            .replaceAll("d42s", formattedDate);
+            .replaceAll('#name#', "")
+            .replaceAll('#address#', encodeForWord(address))
+            .replaceAll('#city#', "A- ${encodeForWord(city)}")
+            .replaceAll('#zH#', encodeForWord(name))
+            .replaceAll("#project#", encodeForWord(project))
+            .replaceAll("#date#", formattedDate);
 
         // Anschrift
 
         List<String> nameParts = name.split(" ");
         
         if(anschrift == "Damen und Herren") {
-          documentXmlContent = documentXmlContent.replaceAll("ans\$replace", "Sehr geehrte Damen und Herren");
+          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Damen und Herren");
         } else if(anschrift == "Frau") {
-          documentXmlContent = documentXmlContent.replaceAll("ans\$replace", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
+          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
         } else if(anschrift == "Herr") {
-          documentXmlContent = documentXmlContent.replaceAll("ans\$replace", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
+          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
         }
       }
 
       print("Ganz am Anfang: $documentXmlContent");
 
       final updatedDocument = XmlDocument.parse(documentXmlContent);
-      final lvPlaceholder = updatedDocument.findAllElements('w:t').where((element) => element.text == "~23sF");
+      final lvPlaceholder = updatedDocument.findAllElements('w:t').where((element) => element.text == "#LV#");
 
       double finalNettoPrice = 0.0;
       if(leistungen.isNotEmpty) {
@@ -151,9 +151,9 @@ class Angebot {
       var finalBruttoPriceFormatted = finalBruttoPrice.toStringAsFixed(2).replaceAll(".", ",");
 
       documentXmlContent = documentXmlContent
-                            .replaceAll("f32", finalNettoPriceFormatted)
-                            .replaceAll("u%-20", ustFormatted)
-                            .replaceAll("sd3", finalBruttoPriceFormatted);
+                            .replaceAll("#netto#", finalNettoPriceFormatted)
+                            .replaceAll("#ust#", ustFormatted)
+                            .replaceAll("#inklUst#", finalBruttoPriceFormatted);
 
       documentXmlContent = documentXmlContent
                 .replaceAll("&#x9F;", "")
@@ -165,7 +165,7 @@ class Angebot {
                 .replaceAll("&#x93;", "")
                 .replaceAll("&#x9E;", "")
                 .replaceAll("&#x9D;", "")
-                .replaceAll("~23sF", " ");
+                .replaceAll("#LV#", " ");
 
       print("$documentXmlContent");
 
