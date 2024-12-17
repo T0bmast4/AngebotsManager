@@ -1,7 +1,8 @@
+import 'dart:convert';
 import 'dart:io';
 
-import 'package:angebote_manager/angebotsleistung.dart';
-import 'package:angebote_manager/unterleistung.dart';
+import 'package:angebote_manager/models/angebotsleistung.dart';
+import 'package:angebote_manager/models/unterleistung.dart';
 import 'package:archive/archive.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
@@ -51,7 +52,7 @@ class Angebot {
       var now = DateTime.now();
       var formatter = DateFormat('dd.MM.yyyy');
       String formattedDate = formatter.format(now);
-      
+
       if(zH != null) {
         documentXmlContent = documentXmlContent
             .replaceAll('#name#', encodeForWord(name))
@@ -81,7 +82,7 @@ class Angebot {
         // Anschrift
 
         List<String> nameParts = name.split(" ");
-        
+
         if(anschrift == "Damen und Herren") {
           documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Damen und Herren");
         } else if(anschrift == "Frau") {
@@ -90,8 +91,6 @@ class Angebot {
           documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
         }
       }
-
-      print("Ganz am Anfang: $documentXmlContent");
 
       final updatedDocument = XmlDocument.parse(documentXmlContent);
       final lvPlaceholder = updatedDocument.findAllElements('w:t').where((element) => element.text == "#LV#");
@@ -151,23 +150,22 @@ class Angebot {
       var finalBruttoPriceFormatted = finalBruttoPrice.toStringAsFixed(2).replaceAll(".", ",");
 
       documentXmlContent = documentXmlContent
-                            .replaceAll("#netto#", finalNettoPriceFormatted)
-                            .replaceAll("#ust#", ustFormatted)
-                            .replaceAll("#inklUst#", finalBruttoPriceFormatted);
+          .replaceAll("#netto#", finalNettoPriceFormatted)
+          .replaceAll("#ust#", ustFormatted)
+          .replaceAll("#inklUst#", finalBruttoPriceFormatted);
 
       documentXmlContent = documentXmlContent
-                .replaceAll("&#x9F;", "")
-                .replaceAll("&#x82;", "")
-                .replaceAll("&#x84;", "")
-                .replaceAll("&#x96;", "")
-                .replaceAll("&#x9C;", "")
-                .replaceAll("&#x80;", "")
-                .replaceAll("&#x93;", "")
-                .replaceAll("&#x9E;", "")
-                .replaceAll("&#x9D;", "")
-                .replaceAll("#LV#", " ");
+          .replaceAll("&#x9F;", "")
+          .replaceAll("&#x82;", "")
+          .replaceAll("&#x84;", "")
+          .replaceAll("&#x96;", "")
+          .replaceAll("&#x9C;", "")
+          .replaceAll("&#x80;", "")
+          .replaceAll("&#x93;", "")
+          .replaceAll("&#x9E;", "")
+          .replaceAll("&#x9D;", "")
+          .replaceAll("#LV#", " ");
 
-      print("$documentXmlContent");
 
       var newArchive = Archive();
 

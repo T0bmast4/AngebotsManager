@@ -43,6 +43,9 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.6
   docx_template: ^0.4.0
+  sqflite: ^2.3.3+1
+  sqflite_common_ffi: any
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +65,7 @@ dev_dependencies:
 flutter:
   assets:
     - documents/Vorlage.docx
+    - documents/templates.docx
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

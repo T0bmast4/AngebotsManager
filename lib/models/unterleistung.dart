@@ -16,4 +16,12 @@ class Unterleistung {
 
   @override
   int get hashCode => Object.hash(name, description);
+
+  Map<String, Object?> toMap(int leistungId) {
+    return {
+      'FK_LeistungID': leistungId,
+      'name': name,
+      'description': description,
+    };
+  }
 }

@@ -1,12 +1,14 @@
-import 'package:angebote_manager/unterleistung.dart';
+import 'package:angebote_manager/models/unterleistung.dart';
 
 class Leistung {
+  final int? id;
   final String name;
   final String description;
   final List<Unterleistung>? unterleistungen;
   final List<String> units;
 
   Leistung({
+    this.id,
     required this.name,
     required this.description,
     this.unterleistungen,
@@ -22,4 +24,12 @@ class Leistung {
 
   @override
   int get hashCode => Object.hash(name, description);
+
+  Map<String, Object?> toMap() {
+    return {
+      'name': name,
+      'description': description,
+      'units': units.join(","),
+    };
+  }
 }

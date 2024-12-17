@@ -1,14 +1,22 @@
-import 'package:angebote_manager/angebot_create_page.dart';
+import 'dart:io';
+
+import 'package:angebote_manager/ui/designables/epox_navbar.dart';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 void main() {
+  if(Platform.isWindows || Platform.isLinux) {
+    sqfliteFfiInit();
+  }
+
+  databaseFactory = databaseFactoryFfi;
+
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -40,55 +48,17 @@ class HomePage extends StatefulWidget {
 }
 
 class HomePageState extends State<HomePage> {
-  int _selectedIndex = 0;
-
-  List<Widget> _pages = <Widget>[
-    //AngebotOverviewPage(),
-    AngebotCreatePage(),
-    Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Settings"),
-          Icon(Icons.settings),
-        ],
-      ),
-    ),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.grey[800],
-          title: Text(style: TextStyle(color: Colors.white), "EPOX"),
+          title: const Text(style: TextStyle(color: Colors.white), "EPOX"),
           elevation: 20,
           centerTitle: true,
         ),
-        bottomNavigationBar: Container(
-          child: BottomNavigationBar(
-            elevation: 50,
-            items: const [
-              BottomNavigationBarItem(
-                icon: Icon(Icons.home),
-                label: "Angebote",
-              ),
-              BottomNavigationBarItem(
-                  icon: Icon(Icons.settings), label: "Settings")
-            ],
-            currentIndex: _selectedIndex,
-            selectedItemColor: Colors.blueAccent,
-            onTap: _onItemTapped,
-          ),
-        ),
-        body: Center(
-          child: _pages.elementAt(_selectedIndex),
-        ));
+      body: const EpoxNavbar(),
+    );
   }
 }

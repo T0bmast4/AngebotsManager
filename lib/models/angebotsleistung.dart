@@ -1,4 +1,4 @@
-import 'package:angebote_manager/leistung.dart';
+import 'package:angebote_manager/models/leistung.dart';
 
 class AngebotsLeistung {
   final Leistung leistung;
