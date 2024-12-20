@@ -34,6 +34,8 @@ class Angebot {
 
     final bytes = data.buffer.asUint8List();
 
+    String documentXmlContent = latin1.decode(bytes);
+
     var archive = ZipDecoder().decodeBytes(bytes);
 
     ArchiveFile? documentXmlFile = archive.firstWhere(
@@ -282,8 +284,7 @@ class Angebot {
         .replaceAll("Ü", "Ã")
         .replaceAll("ü", "Ã¼")
         .replaceAll(" – ", " â ")
-        .replaceAll("²", "Â²")
-        .replaceAll("~23sF", " ");
+        .replaceAll("²", "Â²");
   }
 
   String lvEntry(AngebotsLeistung angebotsLeistung) {

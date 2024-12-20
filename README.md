@@ -1,4 +1,4 @@
-# angebote_manager
+# AngebotManager
 
 An App to manage Angebote
 

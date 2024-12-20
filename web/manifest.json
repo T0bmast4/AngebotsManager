@@ -1,6 +1,6 @@
 {
-    "name": "angebote_manager",
-    "short_name": "angebote_manager",
+    "name": "angebot_manager",
+    "short_name": "angebot_manager",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

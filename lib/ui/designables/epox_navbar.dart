@@ -1,4 +1,5 @@
 import 'package:angebote_manager/ui/pages/angebot_create/angebot_create_page.dart';
+import 'package:angebote_manager/ui/pages/leistungen_overview/leistungen_overview_page.dart';
 import 'package:flutter/material.dart';
 
 class EpoxNavbar extends StatefulWidget {
@@ -14,15 +15,7 @@ class _EpoxNavbarState extends State<EpoxNavbar> {
   List<Widget> _pages = <Widget>[
     //AngebotOverviewPage(),
     AngebotCreatePage(),
-    Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Leistungen"),
-          Icon(Icons.mark_email_unread_rounded),
-        ],
-      ),
-    ),
+    LeistungenOverviewPage(),
     Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -32,7 +25,6 @@ class _EpoxNavbarState extends State<EpoxNavbar> {
         ],
       ),
     ),
-
   ];
 
   @override
@@ -52,7 +44,6 @@ class _EpoxNavbarState extends State<EpoxNavbar> {
           labelType: NavigationRailLabelType.all,
           destinations: const <NavigationRailDestination>
           [
-            // navigation destinations
             NavigationRailDestination(
               icon: Icon(Icons.euro),
               selectedIcon: Icon(Icons.euro),

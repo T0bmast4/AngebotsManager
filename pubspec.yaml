@@ -1,5 +1,5 @@
 name: angebote_manager
-description: "An App to manage Angebote"
+description: "An App to manage offers"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -45,7 +45,9 @@ dependencies:
   docx_template: ^0.4.0
   sqflite: ^2.3.3+1
   sqflite_common_ffi: any
+  charset: ^2.0.0
   path: ^1.9.0
+  rename_app: any
 
 dev_dependencies:
   flutter_test:
@@ -57,7 +59,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
-
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
