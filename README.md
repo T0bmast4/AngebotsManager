@@ -1,6 +1,6 @@
 # AngebotManager
 
-An App to manage Angebote
+Eine App zum Angebote Erstellen und Editieren.
 
 ## Getting Started
 
