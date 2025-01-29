@@ -17,6 +17,7 @@ class Angebot {
   final String city;
   final String project;
   final String anschrift;
+  final String date;
   List<AngebotsLeistung> leistungen;
 
   Angebot({
@@ -26,6 +27,7 @@ class Angebot {
     required this.city,
     required this.project,
     required this.anschrift,
+    required this.date,
     required this.leistungen,
   });
 
@@ -33,8 +35,6 @@ class Angebot {
     var data = await rootBundle.load('documents/Vorlage.docx');
 
     final bytes = data.buffer.asUint8List();
-
-    String documentXmlContent = latin1.decode(bytes);
 
     var archive = ZipDecoder().decodeBytes(bytes);
 
@@ -51,51 +51,51 @@ class Angebot {
       // ** Angebot **
       //
 
-      var now = DateTime.now();
-      var formatter = DateFormat('dd.MM.yyyy');
-      String formattedDate = formatter.format(now);
+
+
+      documentXmlContent = documentXmlContent
+          .replaceAll('#address#', encodeForWord(address))
+          .replaceAll('#city#', "A- ${encodeForWord(city)}")
+          .replaceAll("#project#", encodeForWord(project.split("\n")[0]))
+          .replaceAll("#date#", date);
+
+      if(project.split("\n").length > 1) {
+        documentXmlContent = documentXmlContent.replaceAll("#project2#", encodeForWord(project.split("\n")[1]));
+      }else{
+        documentXmlContent = documentXmlContent.replaceAll("#project2#", "");
+      }
 
       if(zH != null) {
         documentXmlContent = documentXmlContent
             .replaceAll('#name#', encodeForWord(name))
-            .replaceAll('#address#', encodeForWord(address))
-            .replaceAll('#city#', "A- ${encodeForWord(city)}")
-            .replaceAll('#zH#', encodeForWord(zH!))
-            .replaceAll("#project#", encodeForWord(project))
-            .replaceAll("#date#", formattedDate);
-
-        List<String> nameParts = zH!.split(" ");
-        if(anschrift == "Damen und Herren") {
-          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Damen und Herren");
-        } else if(anschrift == "Frau") {
-          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
-        } else if(anschrift == "Herr") {
-          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
-        }
+            .replaceAll('#zH#', encodeForWord(zH!));
       }else{
         documentXmlContent = documentXmlContent
             .replaceAll('#name#', "")
-            .replaceAll('#address#', encodeForWord(address))
-            .replaceAll('#city#', "A- ${encodeForWord(city)}")
-            .replaceAll('#zH#', encodeForWord(name))
-            .replaceAll("#project#", encodeForWord(project))
-            .replaceAll("#date#", formattedDate);
+            .replaceAll('#zH#', encodeForWord(name));
+      }
 
-        // Anschrift
+      // Anschrift
+      List<String> nameParts;
+      if(zH != null) {
+        nameParts = zH!.split(" ");
+      }else{
+        nameParts = name.split(" ");
+      }
 
-        List<String> nameParts = name.split(" ");
-
-        if(anschrift == "Damen und Herren") {
-          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Damen und Herren");
-        } else if(anschrift == "Frau") {
-          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
-        } else if(anschrift == "Herr") {
-          documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
-        }
+      if(anschrift == "Damen und Herren") {
+        documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Damen und Herren");
+      } else if(anschrift == "Frau") {
+        documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Frau ${encodeForWord(nameParts.last)}");
+      } else if(anschrift == "Herr") {
+        documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrter Herr ${encodeForWord(nameParts.last)}");
+      } else if(anschrift == "Familie") {
+        documentXmlContent = documentXmlContent.replaceAll("#anschrift#", "Sehr geehrte Familie ${encodeForWord(nameParts.last)}");
       }
 
       final updatedDocument = XmlDocument.parse(documentXmlContent);
-      final lvPlaceholder = updatedDocument.findAllElements('w:t').where((element) => element.text == "#LV#");
+      final lvPlaceholder = updatedDocument.findAllElements('w:p').where((element) => element.innerText == "#LV#");
+
 
       double finalNettoPrice = 0.0;
       if(leistungen.isNotEmpty) {
@@ -127,16 +127,17 @@ class Angebot {
         //
 
         for (int i = 0; i < leistungen.length; i++) {
-          final newLvEntry = XmlDocumentFragment.parse(lvEntry(leistungen[i])).root;
+          final newLvEntry = XmlDocumentFragment.parse(await lvEntry(leistungen[i])).root;
 
           try {
-            final parent = lvPlaceholder.first.parent?.parent?.parent;
+            final parent = lvPlaceholder.first.parent;
 
             if (parent != null) {
-              parent.children.insert(50, newLvEntry);
+              final insertIndex = parent.children.indexOf(lvPlaceholder.first);
+              parent.children.insert(insertIndex + 1, newLvEntry);
             }
           }catch(e) {
-            throw("Platzhalter ~23sF nicht gefunden");
+            throw("Platzhalter #LV# nicht gefunden");
           }
         }
       }
@@ -152,9 +153,9 @@ class Angebot {
       var finalBruttoPriceFormatted = finalBruttoPrice.toStringAsFixed(2).replaceAll(".", ",");
 
       documentXmlContent = documentXmlContent
-          .replaceAll("#netto#", finalNettoPriceFormatted)
-          .replaceAll("#ust#", ustFormatted)
-          .replaceAll("#inklUst#", finalBruttoPriceFormatted);
+          .replaceAll("#netto#", formatNumber(finalNettoPriceFormatted))
+          .replaceAll("#ust#", formatNumber(ustFormatted))
+          .replaceAll("#inklUst#", formatNumber(finalBruttoPriceFormatted));
 
       documentXmlContent = documentXmlContent
           .replaceAll("&#x9F;", "")
@@ -196,6 +197,22 @@ class Angebot {
       print('document.xml nicht gefunden');
       return false;
     }
+  }
+
+  String formatNumber(String value) {
+    final parts = value.split(',');
+    String integerPart = parts[0];
+    String decimalPart = parts[1];
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < integerPart.length; i++) {
+      if (i > 0 && (integerPart.length - i) % 3 == 0) {
+        buffer.write('.');
+      }
+      buffer.write(integerPart[i]);
+    }
+
+    return '${buffer.toString()},$decimalPart';
   }
 
   XmlElement createCell(String text, bool alignRight) {
@@ -287,7 +304,25 @@ class Angebot {
         .replaceAll("²", "Â²");
   }
 
-  String lvEntry(AngebotsLeistung angebotsLeistung) {
+  Future<String> getDocumentXmlContent(String file) async {
+    var data = await rootBundle.load(file);
+
+    final bytes = data.buffer.asUint8List();
+
+    var archive = ZipDecoder().decodeBytes(bytes);
+
+    ArchiveFile? documentXmlFile = archive.firstWhere(
+          (file) => file.name == 'word/document.xml',
+    );
+
+    if (documentXmlFile != null) {
+      String documentXmlContent = String.fromCharCodes(documentXmlFile.content);
+      return documentXmlContent;
+    }
+    return "";
+  }
+
+  Future<String> lvEntry(AngebotsLeistung angebotsLeistung) async {
     String title = encodeForWord(angebotsLeistung.leistung.name);
     String description = encodeForWord(angebotsLeistung.leistung.description);
     String amount = angebotsLeistung.amountString;
@@ -296,430 +331,157 @@ class Angebot {
     String singlePrice = angebotsLeistung.singlePriceString;
     String totalPrice = angebotsLeistung.totalPrice.toString();
 
-    return '''
-         <w:p w14:paraId="2DB10B8C" w14:textId="77777777" w:rsidP="00DF092C" w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="00B0488F">
-            <w:pPr>
-                <w:pStyle w:val="Listenabsatz" />
-                <w:numPr>
-                    <w:ilvl w:val="0" />
-                    <w:numId w:val="16" />
-                </w:numPr>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:iCs />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-            </w:pPr>
-            <w:r>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:i />
-                    <w:iCs />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="26" />
-                    <w:szCs w:val="26" />
-                    <w:u w:val="single" />
-                </w:rPr>
-                <w:t>$title</w:t>
-            </w:r>
-        </w:p>
-        ${description.isNotEmpty ? '''
-        <w:p w14:paraId="7C14C7B5" w14:textId="77777777" w:rsidP="00DF092C" w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="009E36B2">
-            <w:pPr>
-                <w:ind w:left="1416" />
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:iCs />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-        <w:p w14:paraId="443E6064" w14:textId="77777777" w:rsidP="00DF092C" w:rsidR="00DF092C" w:rsidRDefault="00DF092C">
-                <w:pPr>
-                    <w:ind w:left="708" />
-                    <w:rPr>
-                        <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                        <w:color w:val="1C1C1C" />
-                        <w:sz w:val="20" />
-                        <w:szCs w:val="20" />
-                    </w:rPr>
-                </w:pPr>
-                
-                <w:r>
-                    <w:rPr>
-                        <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                        <w:color w:val="1C1C1C" />
-                        <w:sz w:val="22" />
-                        <w:szCs w:val="22" />
-                    </w:rPr>
-                    <w:t>$description</w:t>
-                </w:r>
-                
-            </w:p>
-            ''' : ''}
-        <w:p w14:paraId="58D5D565" w14:textId="77777777" w:rsidP="00DF092C" w:rsidR="00DF092C"
-            w:rsidRDefault="00DF092C" w:rsidRPr="00BC3FAA">
-            <w:pPr>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-        ${unterleistungen != null ? unterlvEntry(unterleistungen) : ""}
-        <w:p w14:paraId="1E686194" w14:textId="77777777" w:rsidP="00DF092C"
-            w:rsidR="00DF092C" w:rsidRDefault="00DF092C">
-            <w:pPr>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-            </w:pPr>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:color w:val="1C1C1C" />
-                </w:rPr>
-                <w:tab />
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="16" />
-                    <w:szCs w:val="16" />
-                </w:rPr>
-                <w:t xml:space="preserve">Menge          Einheit         </w:t>
-            </w:r>
-            <w:r>
-                <w:rPr>
-                    <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="16" />
-                    <w:szCs w:val="16" />
-                </w:rPr>
-                <w:t xml:space="preserve"> </w:t>
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="16" />
-                    <w:szCs w:val="16" />
-                </w:rPr>
-                <w:t xml:space="preserve"> Einzelpreis         </w:t>
-            </w:r>
-            <w:r>
-                <w:rPr>
-                    <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="16" />
-                    <w:szCs w:val="16" />
-                </w:rPr>
-                <w:t xml:space="preserve">  </w:t>
-            </w:r>
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="16" />
-                    <w:szCs w:val="16" />
-                </w:rPr>
-                <w:t xml:space="preserve"> </w:t>
-            </w:r>
-            <w:proofErr w:type="gramStart" />
-            <w:r w:rsidRPr="002D168E">
-                <w:rPr>
-                    <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="16" />
-                    <w:szCs w:val="16" />
-                </w:rPr>
-                <w:t>Gesamt</w:t>
-            </w:r>
-            <w:proofErr w:type="gramEnd" />
-        </w:p>
-        <w:tbl>
-            <w:tblPr>
-                <w:tblStyle w:val="Tabellenraster" />
-                <w:tblW w:type="auto" w:w="0" />
-                <w:tblBorders>
-                    <w:top w:color="auto" w:space="0" w:sz="6" w:val="single" />
-                    <w:left w:color="auto" w:space="0" w:sz="0" w:val="none" />
-                    <w:bottom w:color="auto" w:space="0" w:sz="6" w:val="single" />
-                    <w:right w:color="auto" w:space="0" w:sz="0" w:val="none" />
-                    <w:insideH w:color="auto" w:space="0" w:sz="0" w:val="none" />
-                    <w:insideV w:color="auto" w:space="0" w:sz="0" w:val="none" />
-                </w:tblBorders>
-                <w:tblLook w:firstColumn="1" w:firstRow="1" w:lastColumn="0" w:lastRow="0"
-                    w:noHBand="0" w:noVBand="1" w:val="04A0" />
-            </w:tblPr>
-            <w:tblGrid>
-                <w:gridCol w:w="4302" />
-                <w:gridCol w:w="1288" />
-                <w:gridCol w:w="811" />
-                <w:gridCol w:w="1358" />
-                <w:gridCol w:w="1116" />
-            </w:tblGrid>
-            <w:tr w14:paraId="3A9806A6" w14:textId="77777777" w:rsidR="00DF092C"
-                w:rsidTr="00E279CF">
-                <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:type="dxa" w:w="4302" />
-                    </w:tcPr>
-                    <w:p w14:paraId="25743519" w14:textId="77777777" w:rsidP="00E279CF"
-                        w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="00DF092C">
-                        <w:pPr>
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                                <w:sz w:val="20" />
-                                <w:szCs w:val="20" />
-                            </w:rPr>
-                        </w:pPr>
-                    </w:p>
-                </w:tc>
-                <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:type="dxa" w:w="1288" />
-                    </w:tcPr>
-                    <w:p w14:paraId="7625BABF" w14:textId="796376FC" w:rsidP="00E279CF"
-                        w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="00DF092C">
-                        <w:pPr>
-                            <w:jc w:val="right" />
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                            </w:rPr>
-                        </w:pPr>
-                        <w:r w:rsidRPr="00DF092C">
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                                <w:sz w:val="20" />
-                                <w:szCs w:val="20" />
-                            </w:rPr>
-                            <w:t>$amount</w:t>
-                        </w:r>
-                    </w:p>
-                </w:tc>
-                <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:type="dxa" w:w="811" />
-                    </w:tcPr>
-                    <w:p w14:paraId="207A3A35" w14:textId="2BD76982" w:rsidP="00E279CF"
-                        w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="00DF092C">
-                        <w:pPr>
-                            <w:jc w:val="right" />
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                            </w:rPr>
-                        </w:pPr>
-                        <w:r w:rsidRPr="00DF092C">
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                                <w:sz w:val="20" />
-                                <w:szCs w:val="20" />
-                            </w:rPr>
-                            <w:t>$unit</w:t>
-                        </w:r>
-                    </w:p>
-                </w:tc>
-                <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:type="dxa" w:w="1358" />
-                    </w:tcPr>
-                    <w:p w14:paraId="0C17D0CF" w14:textId="58E6920D" w:rsidP="00E279CF"
-                        w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="00DF092C">
-                        <w:pPr>
-                            <w:jc w:val="right" />
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                            </w:rPr>
-                        </w:pPr>
-                        <w:r>
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                                <w:sz w:val="20" />
-                                <w:szCs w:val="20" />
-                            </w:rPr>
-                            <w:t>$singlePrice</w:t>
-                        </w:r>
-                    </w:p>
-                </w:tc>
-                <w:tc>
-                    <w:tcPr>
-                        <w:tcW w:type="dxa" w:w="1116" />
-                    </w:tcPr>
-                    <w:p w14:paraId="08B2489B" w14:textId="2F8B0889" w:rsidP="00E279CF"
-                        w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="00DF092C">
-                        <w:pPr>
-                            <w:jc w:val="right" />
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                            </w:rPr>
-                        </w:pPr>
-                        <w:r>
-                            <w:rPr>
-                                <w:rFonts w:ascii="Arial" w:cs="Arial" w:hAnsi="Arial" />
-                                <w:bCs />
-                                <w:color w:val="1C1C1C" />
-                                <w:sz w:val="20" />
-                                <w:szCs w:val="20" />
-                            </w:rPr>
-                            <w:t>$totalPrice</w:t>
-                        </w:r>
-                    </w:p>
-                </w:tc>
-            </w:tr>
-        </w:tbl>
-        <w:p w14:paraId="7C14C7B5" w14:textId="77777777" w:rsidP="00DF092C" w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="009E36B2">
-            <w:pPr>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:iCs />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-        ''';
+    String documentXmlContent = await getDocumentXmlContent("documents/templates.docx");
+
+    final updatedDocument = XmlDocument.parse(documentXmlContent);
+    final lvPlaceholder = updatedDocument.findAllElements('w:p').where((element) => element.innerText == "#lvEntry#");
+
+    var sibling = lvPlaceholder.first.nextSibling;
+    bool pageBreakFound = false;
+    StringBuffer result = StringBuffer();
+
+
+    if(description.isEmpty) {
+      final descriptionPlaceholder = updatedDocument.findAllElements('w:p').where((element) => element.innerText == "LeistungDescription");
+      descriptionPlaceholder.first.nextSibling?.remove();
+      descriptionPlaceholder.first.remove();
+    }
+
+
+    final unterleistungenPlaceholder = updatedDocument.findAllElements('w:p').where((element) => element.innerText == "#unterleistungen#");
+
+    if(unterleistungen != null) {
+      final unterLvEntries = XmlDocumentFragment.parse(await unterlvEntry(unterleistungen)).root;
+
+      int? insertIndex = unterleistungenPlaceholder.first.parent?.children.indexOf(unterleistungenPlaceholder.first);
+
+      if(insertIndex != null) {
+        unterleistungenPlaceholder.first.parent?.children.insert(insertIndex+1, unterLvEntries);
+      }
+    }
+
+    unterleistungenPlaceholder.first.remove();
+
+    while(sibling != null) {
+      XmlNode pageBreak = XmlElement(
+          XmlName('w:r'),
+          [],
+          [
+            XmlElement(
+                XmlName('w:br'),
+                [XmlAttribute(XmlName('w:type'), 'page')]
+            ),
+          ]
+      );
+
+      for(int i = 0; i < sibling.children.length; i++) {
+        if(sibling.children[i].isEqualNode(pageBreak)) {
+          pageBreakFound = true;
+          break;
+        }
+      }
+
+      if (pageBreakFound) {
+        break;
+      }
+
+      // Aufzählungszeichen fixxen
+      final numIdElements = updatedDocument.findAllElements('w:numId');
+
+      for (var element in numIdElements) {
+        final valAttribute = element.getAttributeNode('w:val');
+        if (valAttribute != null && valAttribute.value == '1') {
+          valAttribute.value = '16';
+        } else if (valAttribute != null && valAttribute.value == '4') {
+          valAttribute.value = '14';
+        }
+      }
+      result.write(sibling.toString());
+      sibling = sibling.nextSibling;
+    }
+
+    return result.toString()
+        .replaceAll("#leistung#", title)
+        .replaceAll("LeistungDescription", description)
+        .replaceAll("#amount#", amount)
+        .replaceAll("#unit#", unit)
+        .replaceAll("#single#", singlePrice)
+        .replaceAll("#total#", totalPrice);
   }
 
-  String unterlvEntry(List<Unterleistung> unterleistungen) {
-    return unterleistungen.map((unterleistung) {
+  Future<String> unterlvEntry(List<Unterleistung> unterleistungen) async {
+    List<Future<String>> unterLvsFutures = unterleistungen.map((unterleistung) async {
       String name = encodeForWord(unterleistung.name);
       String? description;
-      if(unterleistung.description != null) {
+      if (unterleistung.description != null) {
         description = encodeForWord(unterleistung.description!);
       }
 
-      return '''
-        <w:p w14:paraId="02A44904" w14:textId="77777777" w:rsidP="00C27CC0"
-            w:rsidR="00C27CC0" w:rsidRDefault="00C27CC0">
-            <w:pPr>
-                <w:numPr>
-                    <w:ilvl w:val="0" />
-                    <w:numId w:val="14" />
-                </w:numPr>
-                <w:tabs>
-                    <w:tab w:pos="720" w:val="num" />
-                </w:tabs>
-                <w:ind w:left="720" />
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" w:hint="cs" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="22" />
-                    <w:szCs w:val="22" />
-                </w:rPr>
-            </w:pPr>
-            <w:r>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" w:hint="cs" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="22" />
-                    <w:szCs w:val="22" />
-                </w:rPr>
-                <w:t>$name</w:t>
-            </w:r>
-        </w:p>
-        ${description != null ? '''
-        <w:p w14:paraId="7391C4D0" w14:textId="77777777" w:rsidP="00C27CC0"
-            w:rsidR="00C27CC0" w:rsidRDefault="00C27CC0">
-            <w:pPr>
-                <w:ind w:left="1416" />
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" w:hint="cs" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-            </w:pPr>
-            <w:r>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" w:hint="cs" />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-                <w:t xml:space="preserve">$description</w:t>
-            </w:r>
-        </w:p>
-        ''' : ''}
-        <w:p w14:paraId="7C14C7B5" w14:textId="77777777" w:rsidP="00DF092C" w:rsidR="00DF092C" w:rsidRDefault="00DF092C" w:rsidRPr="009E36B2">
-            <w:pPr>
-                <w:rPr>
-                    <w:rFonts w:ascii="Gisha" w:cs="Gisha" w:hAnsi="Gisha" />
-                    <w:iCs />
-                    <w:color w:val="1C1C1C" />
-                    <w:sz w:val="20" />
-                    <w:szCs w:val="20" />
-                </w:rPr>
-            </w:pPr>
-        </w:p>
-    ''';
-    }).join("\n");
+      String documentXmlContent = await getDocumentXmlContent("documents/templates.docx");
+      final updatedDocument = XmlDocument.parse(documentXmlContent);
+
+      final unterLvPlaceholder = updatedDocument.findAllElements('w:p').where((element) => element.innerText == "#unterlvEntry#");
+
+      var sibling = unterLvPlaceholder.first.nextSibling;
+      bool pageBreakFound = false;
+      StringBuffer result = StringBuffer();
+
+      if (description == null) {
+        final descriptionPlaceholder = updatedDocument.findAllElements('w:p').where((element) => element.innerText == "#unterleistungDescription#");
+        if (descriptionPlaceholder.isNotEmpty) {
+          descriptionPlaceholder.first.nextSibling?.remove();
+          descriptionPlaceholder.first.remove();
+        }
+      }
+
+      while (sibling != null) {
+        XmlNode pageBreak = XmlElement(
+          XmlName('w:r'),
+          [],
+          [
+            XmlElement(
+              XmlName('w:br'),
+              [XmlAttribute(XmlName('w:type'), 'page')],
+            ),
+          ],
+        );
+
+        for (int i = 0; i < sibling.children.length; i++) {
+          if (sibling.children[i].isEqualNode(pageBreak)) {
+            pageBreakFound = true;
+            break;
+          }
+        }
+
+        if (pageBreakFound) {
+          break;
+        }
+
+        result.write(sibling.toXmlString(pretty: true));
+        sibling = sibling.nextSibling;
+      }
+
+      if (description != null) {
+        return result.toString()
+            .replaceAll("#unterleistung#", name)
+            .replaceAll("#unterleistungDescription#", description);
+      }
+      return result.toString().replaceAll("#unterleistung#", name);
+    }).toList();
+
+    List<String> unterLvs = await Future.wait(unterLvsFutures);
+    return unterLvs.join("\n");
+  }
+
+  Map<String, Object?> toMap() {
+    return {
+      'name': name,
+      'zH': zH ?? "",
+      'address': address,
+      'city': city,
+      'project': project,
+      'anschrift': anschrift,
+      'date': date,
+    };
   }
 }

@@ -1,20 +1,22 @@
 import 'package:angebote_manager/models/unterleistung.dart';
 
 class Leistung {
-  final int? id;
+  final int id;
   final int? orderIndex;
   final String name;
   final String description;
   final List<Unterleistung>? unterleistungen;
   final List<String> units;
+  final double? fixCost;
 
   Leistung({
-    this.id,
+    required this.id,
     this.orderIndex,
     required this.name,
     required this.description,
     this.unterleistungen,
     required this.units,
+    this.fixCost,
   });
 
   @override
@@ -32,7 +34,8 @@ class Leistung {
       'name': name,
       'description': description,
       'units': units.join(","),
-      'orderIndex': orderIndex ?? id ?? 0,
+      'orderIndex': orderIndex ?? 0,
+      'fixCost': fixCost ?? 0,
     };
   }
 }

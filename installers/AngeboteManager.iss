@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "Angebot Manager"
-#define MyAppVersion "1.0"
+#define MyAppVersion "1.2"
 #define MyAppPublisher "Tobias Heilmann"
 #define MyAppURL "https://tobiasheilmann.at"
 #define MyAppExeName "angebote_manager.exe"

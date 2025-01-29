@@ -1,7 +1,10 @@
+
 import 'dart:io';
 
 import 'package:angebote_manager/ui/designables/epox_navbar.dart';
+import 'package:angebote_manager/ui/pages/leistungen_overview/leistungen_overview_provider.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
@@ -13,7 +16,12 @@ void main() {
     databaseFactory = databaseFactorySqflitePlugin;
   }
 
-  runApp(const MyApp());
+  runApp(MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => LeistungenOverviewProvider()),
+      ],
+      child: const MyApp()
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -60,7 +68,7 @@ class HomePageState extends State<HomePage> {
           elevation: 20,
           centerTitle: true,
         ),
-      body: const EpoxNavbar(),
+      body: const EpoxNavbar(selectedIndex: 0),
     );
   }
 }

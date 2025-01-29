@@ -1,8 +1,12 @@
 class Unterleistung {
+  final int id;
+  final int? orderIndex;
   final String name;
   final String? description;
 
   Unterleistung({
+    required this.id,
+    this.orderIndex,
     required this.name,
     this.description,
   });
@@ -22,6 +26,7 @@ class Unterleistung {
       'FK_LeistungID': leistungId,
       'name': name,
       'description': description,
+      'orderIndex': orderIndex ?? 0,
     };
   }
 }
