@@ -1,11 +1,19 @@
 import 'dart:convert';
 
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 class BgkCalculator {
 
   Future<Map<String, dynamic>?> getRouteDetails(String origin, String destination) async {
-    const String apiKey = 'AIzaSyAlLrkn1to0FEhEIsYuA0hTYBBdO0IJtck';
+    String apiKey = '';
+    try {
+      final keyFile = await rootBundle.loadString('assets/keys.txt');
+      apiKey = keyFile.trim();
+    } catch (e) {
+      throw Exception("Fehler beim Laden des Keys: $e");
+    }
+
     final String url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&key=$apiKey';
     try {
       final response = await http.get(Uri.parse(url));
