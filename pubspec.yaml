@@ -50,6 +50,9 @@ dependencies:
   rename_app: any
   http: any
   google_maps_flutter: ^2.2.0
+  shared_preferences: ^2.2.2
+  google_places_flutter: ^2.0.6
+  google_maps_webservice: ^0.0.20-nullsafety.5
 
 dev_dependencies:
   flutter_test:

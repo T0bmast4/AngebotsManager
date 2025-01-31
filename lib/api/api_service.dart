@@ -1,18 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
-class BgkCalculator {
+class ApiService {
 
   Future<Map<String, dynamic>?> getRouteDetails(String origin, String destination) async {
-    String apiKey = '';
-    try {
-      final keyFile = await rootBundle.loadString('assets/keys.txt');
-      apiKey = keyFile.trim();
-    } catch (e) {
-      throw Exception("Fehler beim Laden des Keys: $e");
-    }
+    String apiKey = await getAPIKey();
 
     final String url = 'https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&key=$apiKey';
     try {
@@ -45,7 +41,14 @@ class BgkCalculator {
   }
 
   Future<double> getBGK(int days, String destination) async {
-    var routeDetails = await getRouteDetails("Fabrikweg 27, Zurndorf", destination);
+    final prefs = await SharedPreferences.getInstance();
+    String address = await prefs.getString("user_address") ?? "";
+
+    if(address.isEmpty) {
+      return 0.0;
+    }
+    var routeDetails = await getRouteDetails(address, destination);
+
     var min = routeDetails?["duration"];
     var km = routeDetails?["distance"];
 
@@ -55,5 +58,20 @@ class BgkCalculator {
 
     double bgk = ((days * 2) * min) / 60 * 35 + (km*days);
     return bgk;
+  }
+
+  Future<String> getAPIKey() async {
+    String apiKey = "";
+    try {
+      final keyFile = await rootBundle.loadString('assets/keys.txt');
+      apiKey = keyFile.trim();
+
+      if (apiKey.contains("=")) {
+        apiKey = apiKey.split("=")[1].trim();
+      }
+    } catch (e) {
+      throw Exception("Fehler beim Laden des Keys: $e");
+    }
+    return apiKey;
   }
 }

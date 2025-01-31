@@ -1,4 +1,4 @@
-import 'package:angebote_manager/api/bgk_calculator.dart';
+import 'package:angebote_manager/api/api_service.dart';
 import 'package:angebote_manager/database/angebot_database.dart';
 import 'package:angebote_manager/database/leistungen_database.dart';
 import 'package:angebote_manager/models/angebot.dart';
@@ -483,7 +483,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
                       });
 
 
-                      final double bgk = await BgkCalculator().getBGK(int.parse(daysController.text), projectController.text.split("\n")[1]);
+                      final double bgk = await ApiService().getBGK(int.parse(daysController.text), projectController.text.split("\n")[1]);
                       singlePriceController.text = bgk.toStringAsFixed(2);
 
                       bottomSheetSetState(() {
@@ -683,7 +683,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
                     });
 
 
-                    final double bgk = await BgkCalculator().getBGK(int.parse(daysController.text), projectController.text.split("\n")[1]);
+                    final double bgk = await ApiService().getBGK(int.parse(daysController.text), projectController.text.split("\n")[1]);
                     singlePriceController.text = bgk.toStringAsFixed(2);
 
                     bottomSheetSetState(() {
