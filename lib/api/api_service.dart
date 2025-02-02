@@ -63,12 +63,8 @@ class ApiService {
   Future<String> getAPIKey() async {
     String apiKey = "";
     try {
-      final keyFile = await rootBundle.loadString('assets/keys.txt');
-      apiKey = keyFile.trim();
-
-      if (apiKey.contains("=")) {
-        apiKey = apiKey.split("=")[1].trim();
-      }
+      final prefs = await SharedPreferences.getInstance();
+      apiKey = prefs.getString("api_key") ?? "";
     } catch (e) {
       throw Exception("Fehler beim Laden des Keys: $e");
     }

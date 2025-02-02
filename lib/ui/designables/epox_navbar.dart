@@ -1,8 +1,10 @@
 import 'package:angebote_manager/ui/pages/angebot_create/angebot_create_page.dart';
 import 'package:angebote_manager/ui/pages/angebot_overview/angebot_overview_page.dart';
 import 'package:angebote_manager/ui/pages/leistungen_overview/leistungen_overview_page.dart';
+import 'package:angebote_manager/ui/pages/leistungen_overview/leistungen_overview_provider.dart';
 import 'package:angebote_manager/ui/pages/settings/settings_page.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class EpoxNavbar extends StatefulWidget {
   final selectedIndex;
@@ -77,6 +79,11 @@ class _EpoxNavbarState extends State<EpoxNavbar> {
             icon: const Icon(Icons.add),
             label: Text("Neues Angebot"),
             backgroundColor: Colors.grey[800],
+          ) : _selectedIndex == 2 ? FloatingActionButton(
+            onPressed: () {
+              context.read<LeistungenOverviewProvider>().addEmptyLeistung();
+            },
+            child: Icon(Icons.add_box_outlined)
           ) : null,
         );
       },

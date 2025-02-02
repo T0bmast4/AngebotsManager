@@ -48,6 +48,22 @@ class LeistungenDatabase {
     return leistungen;
   }
 
+  static Future<bool> existsLeistung(int leistungId) async {
+    final db = await DatabaseHelper.db();
+    if (db == null) {
+      throw Exception("Database Error");
+    }
+
+    final result = await db.query(
+      'Leistungen',
+      columns: ['PK_LeistungID'],
+      where: 'PK_LeistungID = ?',
+      whereArgs: [leistungId],
+    );
+
+    return result.isNotEmpty;
+  }
+
   static Future<List<Unterleistung>> getUnterleistungenForLeistung(int id) async {
     final db = await DatabaseHelper.db();
     if(db == null) {

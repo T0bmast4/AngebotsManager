@@ -11,12 +11,14 @@ class EpoxLeistungCard extends StatefulWidget {
   final int index;
   final double? elevation;
   final Leistung leistung;
+  final bool? autoExpand;
 
   const EpoxLeistungCard({
     super.key,
     required this.index,
     this.elevation,
     required this.leistung,
+    this.autoExpand,
   });
 
   @override
@@ -36,6 +38,10 @@ class _EpoxLeistungCardState extends State<EpoxLeistungCard>
     super.initState();
     _nameController = TextEditingController(text: widget.leistung.name);
     _descriptionController = TextEditingController(text: widget.leistung.description);
+
+    if(widget.autoExpand != null && widget.autoExpand == true) {
+      isExpanded = true;
+    }
   }
 
   void updateUnterleistungOrder(List<Unterleistung> unterleistungen) async {
@@ -182,6 +188,7 @@ class _EpoxLeistungCardState extends State<EpoxLeistungCard>
                                       onPressed: () async {
                                         await LeistungenDatabase.deleteLeistung(widget.leistung.id);
                                         context.read<LeistungenOverviewProvider>().reloadLeistungen();
+                                        context.read<LeistungenOverviewProvider>().removeLeistung(widget.index);
                                         setState(() {
                                           isExpanded = false;
                                         });
@@ -264,7 +271,15 @@ class _EpoxLeistungCardState extends State<EpoxLeistungCard>
                     FilledButton(
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
-                          await LeistungenDatabase.updateLeistung(widget.leistung.id, _nameController.text, _descriptionController.text);
+                          if(await LeistungenDatabase.existsLeistung(widget.leistung.id)) {
+                            await LeistungenDatabase.updateLeistung(widget.leistung.id, _nameController.text, _descriptionController.text);
+                          }else{
+                            //TODO: Units Editable
+                            Leistung leistung = Leistung(id: widget.leistung.id, name: _nameController.text, description: _descriptionController.text, units: [], orderIndex: widget.leistung.id);
+                            await LeistungenDatabase.createLeistung(leistung);
+                            context.read<LeistungenOverviewProvider>().isEmptyLeistungAdded = false;
+                          }
+
                           context.read<LeistungenOverviewProvider>().reloadLeistungen();
                           setState(() {
                             isExpanded = false;
@@ -275,10 +290,13 @@ class _EpoxLeistungCardState extends State<EpoxLeistungCard>
                     ),
                     const SizedBox(width: 8),
                     OutlinedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         setState(() {
                           isExpanded = false;
                         });
+                        if(!await LeistungenDatabase.existsLeistung(widget.leistung.id)) {
+                          context.read<LeistungenOverviewProvider>().removeLeistung(widget.index);
+                        }
                       },
                       child: const Text('Abbrechen'),
                     ),

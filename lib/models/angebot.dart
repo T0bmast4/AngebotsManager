@@ -51,8 +51,6 @@ class Angebot {
       // ** Angebot **
       //
 
-
-
       documentXmlContent = documentXmlContent
           .replaceAll('#address#', encodeForWord(address))
           .replaceAll('#city#', "A- ${encodeForWord(city)}")

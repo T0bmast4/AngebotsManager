@@ -52,6 +52,7 @@ class _LeistungenOverviewPageState extends State<LeistungenOverviewPage> {
             return Padding(
               padding: const EdgeInsets.all(24.0),
               child: ReorderableListView(
+                scrollController: provider.scrollController,
                 buildDefaultDragHandles: false,
                 proxyDecorator: proxyDecorator,
                 padding: const EdgeInsets.only(bottom: 16.0),
@@ -81,6 +82,7 @@ class _LeistungenOverviewPageState extends State<LeistungenOverviewPage> {
                                 onPressed: () async {
                                   await LeistungenDatabase.deleteLeistung(leistungen[index].id);
                                   context.read<LeistungenOverviewProvider>().reloadLeistungen();
+                                  context.read<LeistungenOverviewProvider>().removeLeistung(index);
                                 },
                               );
                             }
@@ -94,13 +96,21 @@ class _LeistungenOverviewPageState extends State<LeistungenOverviewPage> {
                           child: Icon(Icons.delete, color: Colors.white),
                         ),
                       ),
-                      child: EpoxLeistungCard(
+                      child: leistungen[index].name.isEmpty ?
+                      EpoxLeistungCard(
                         key: Key("$index"),
                         index: index,
                         leistung: leistungen[index],
                         elevation: 5,
-                      ),
+                        autoExpand: true,
+                        ) :
+                      EpoxLeistungCard(
+                        key: Key("$index"),
+                        index: index,
+                        leistung: leistungen[index],
+                        elevation: 5,
                     ),
+                  ),
                 ],
               ),
             );

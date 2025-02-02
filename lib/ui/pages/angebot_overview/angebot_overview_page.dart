@@ -35,9 +35,9 @@ class _AngebotOverviewPageState extends State<AngebotOverviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return ListWheelScrollView(
-        itemExtent: 100,
-        diameterRatio: 15,
+    return Padding(
+      padding: EdgeInsets.all(20),
+      child: ListView(
         children: angeboteList.asMap().map((index, angebot) {
           return MapEntry(
             index,
@@ -63,6 +63,7 @@ class _AngebotOverviewPageState extends State<AngebotOverviewPage> {
             ),
           );
         }).values.toList(),
+      ),
     );
   }
 }

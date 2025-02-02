@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:angebote_manager/api/api_service.dart';
 import 'package:angebote_manager/database/angebot_database.dart';
 import 'package:angebote_manager/database/leistungen_database.dart';
@@ -6,7 +8,10 @@ import 'package:angebote_manager/ui/pages/angebot_create/angebot_create_provider
 import 'package:angebote_manager/models/angebotsleistung.dart';
 import 'package:angebote_manager/models/leistung.dart';
 import 'package:blinking_text/blinking_text.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:google_maps_webservice/places.dart';
+import 'package:google_places_flutter/google_places_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -149,7 +154,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
                       Align(
                         alignment: Alignment.centerLeft,
                         child: DropdownMenu<String>(
-                          initialSelection: anschriften.first,
+                          initialSelection: selectedAnschrift,
                           onSelected: (String? value) {
                             setState(() {
                               selectedAnschrift = value!;
@@ -414,10 +419,10 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
                 date: formattedDate,
               );
 
-              if(widget.angebot != null) {
+              if (widget.angebot != null) {
                 await AngebotDatabase.updateAngebot(currentAngebot, widget.id!);
                 Navigator.pop(context, true);
-              }else{
+              } else {
                 await AngebotDatabase.createAngebot(currentAngebot);
               }
 
@@ -430,6 +435,12 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
               setState(() {
                 errorMessage = null;
               });
+            } on FileSystemException catch (e) {
+              if(e.osError?.errorCode == 32) {
+                setState(() {
+                  feedbackMessage = "Das Dokument ist momentan in einem anderen Programm geöffnet. Bitte schließen Sie das Dokument in allen anderen Anwendungen und versuchen Sie es erneut.";
+                });
+              }
             } catch (e, stack) {
               _showError(
                   "Ein unbekannter Fehler ist aufgetreten: $e, $stack");
@@ -506,6 +517,12 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      Padding(padding: EdgeInsets.only(top: 8)),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(leistung.name, style: TextStyle(fontSize: 18)),
+                      ),
+                      const Divider(),
                       Padding(padding: EdgeInsets.only(top: 20)),
                       TextFormField(
                         controller: amountController,
@@ -649,7 +666,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
   }
 
   Future<void> _showLeistungEditForm(BuildContext context, AngebotsLeistung angebotsLeistung) async {
-    final _formKey2 = GlobalKey<FormState>();
+    final formKey2 = GlobalKey<FormState>();
     TextEditingController singlePriceController = TextEditingController();
     TextEditingController amountController = TextEditingController();
     TextEditingController daysController = TextEditingController();
@@ -659,7 +676,9 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
     singlePriceController.text = angebotsLeistung.singlePriceString;
     amountController.text = angebotsLeistung.amountString;
     if(angebotsLeistung.leistung.id == 1) {
-      daysController.text = angebotsLeistung.days!.toString();
+      if(angebotsLeistung.days != null) {
+        daysController.text = angebotsLeistung.days!.toString();
+      }
     }
 
     bool isLoading = false;
@@ -699,13 +718,19 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
               padding: EdgeInsets.only(
                   bottom: MediaQuery.of(context).viewInsets.bottom),
               child: Form(
-                key: _formKey2,
+                key: formKey2,
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 24.0),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      Padding(padding: EdgeInsets.only(top: 8)),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(angebotsLeistung.leistung.name, style: TextStyle(fontSize: 18)),
+                      ),
+                      const Divider(),
                       Padding(padding: EdgeInsets.only(top: 20)),
                       TextFormField(
                         controller: amountController,
@@ -806,7 +831,7 @@ class _AngebotCreatePage extends State<AngebotCreatePage> with SingleTickerProvi
                       Padding(padding: EdgeInsets.only(top: 50)),
                       FilledButton(
                         onPressed: () {
-                          if (_formKey2.currentState!.validate()) {
+                          if (formKey2.currentState!.validate()) {
                             Navigator.pop(context);
                             setState(() {
                               selectedLeistungen.remove(angebotsLeistung);

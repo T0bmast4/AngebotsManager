@@ -5,10 +5,11 @@ import 'package:angebote_manager/ui/designables/epox_navbar.dart';
 import 'package:angebote_manager/ui/pages/leistungen_overview/leistungen_overview_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
-void main() {
+void main() async {
   if (Platform.isWindows || Platform.isLinux) {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;

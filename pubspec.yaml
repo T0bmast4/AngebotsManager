@@ -53,6 +53,8 @@ dependencies:
   shared_preferences: ^2.2.2
   google_places_flutter: ^2.0.6
   google_maps_webservice: ^0.0.20-nullsafety.5
+  flutter_map: any
+  latlong2: any
 
 dev_dependencies:
   flutter_test:
@@ -72,7 +74,6 @@ flutter:
   assets:
     - documents/Vorlage.docx
     - documents/templates.docx
-    - assets/keys.txt
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
